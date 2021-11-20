@@ -1,5 +1,5 @@
 # go-http-proxy
-A simple go program to proxy http request through a server with caching. Based on go-fiber
+A simple go program to proxy http request through a server with caching
 
 ## Install requirements
 For now, since there are no prebuilt binaries, you need to have go installed
