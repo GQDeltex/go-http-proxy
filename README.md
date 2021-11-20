@@ -8,13 +8,13 @@ apt install golang
 ```
 
 
-## Usage/Installation:
-#### Using go get
+## Usage/Installation
+### Using go get
 ```bash
 go get -v https://github.com/GQDeltex/go-http-proxy.git
 ```
-#### Using git and go install
-Then clone the repo into your go workspace and get the dependencies
+### Using git and go install
+Clone the repo into your go workspace and get the dependencies
 ```bash
 git clone https://github.com/GQDeltex/go-http-proxy.git ~/go/src/github.com/GQDeltex/go-http-proxyk
 cd ~/go/src/github.com/GQDeltex/go-http-proxy
@@ -32,7 +32,7 @@ Now you can run the proxy by starting the Executable
 # Or if you've used go install
 ~/go/bin/go-http-proxy
 ```
-
+### Adding to PATH
 You can even add ~/go/bin to your path to have it even easier
 ```bash
 # ~/.bashrc
