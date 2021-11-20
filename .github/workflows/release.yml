@@ -1,5 +1,5 @@
 ---
-name: "tagged-release"
+name: "Release"
 
 on:
   push:
@@ -7,12 +7,23 @@ on:
       - "v*"
 
 jobs:
-  tagged-release:
-    name: "Tagged Release"
-    runs-on: "ubuntu-latest"
-
+  generate:
+    name: Generate cross-platform builds
+    runs-on: ubuntu-latest
     steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Generate build files
+        uses: thatisuday/go-cross-build@v1
+        with:
+          platforms: 'linux/amd64, darwin/amd64, windows/amd64'
+          name: 'go-http-proxy'
+          compress: 'true'
+          dest: 'dist'
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
+          files:
+            - ./dist/*
+
