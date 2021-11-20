@@ -25,11 +25,13 @@ func main() {
 
 	// The main route
 	app.Get("/*", func(c *fiber.Ctx) error {
+		// Parse the URL
 		urlstr := c.Params("*")
 		if urlstr == "" {
 			log.Error("No url Parameter")
 			return errors.New("No URl parameter")
 		}
+		// Check the validity of the url
 		url, err := url.Parse(urlstr)
 		if err != nil {
 			log.Error(err)
@@ -40,16 +42,18 @@ func main() {
 			log.Error("No Host was given")
 			return errors.New("No hostname was given")
 		}
+		// Do a http request to that URL
 		resp, err := http.Get(url.String())
 		if err != nil {
 			log.Error(err)
 			return err
 		}
-		//We Read the response body on the line below.
+		// Read the response Body
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Fatalln(err)
 		}
+		// Extract the content-type
 		content_type := resp.Header["Content-Type"][0]
 		content_type = strings.Split(content_type, "/")[1]
 		log.Debug("Content-Type:", content_type)
