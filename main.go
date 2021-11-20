@@ -1,25 +1,34 @@
 package main
 
 import (
-	"errors"
+	"flag"
+	"time"
+
+	"github.com/GQDeltex/go-http-proxy/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cache"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 func main() {
+	// Parse CLI Arguments
+	loglevel := flag.String("loglevel", "WARNING", "Set the loglevel [DEBUG,INFO,WARNING,ERROR,FATAL]")
+	caching_time := flag.Duration("cachetime", 30*time.Minute, "Set the time to cache stuff")
+	flag.Parse()
+	lvl, err := log.ParseLevel(*loglevel)
+	if err != nil {
+		log.Fatal("Could not Parse Loglevel")
+	}
+	log.Info("LogLevel: ", lvl.String())
+	log.Info("CacheTime: ", caching_time.String())
+
 	// Setup logger and fiber
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(lvl)
 	app := fiber.New()
 
 	// Setup Cache Middleware
 	app.Use(cache.New(cache.Config{
-		Expiration:   30 * time.Minute,
+		Expiration:   *caching_time,
 		CacheControl: true,
 	}))
 
@@ -27,37 +36,19 @@ func main() {
 	app.Get("/*", func(c *fiber.Ctx) error {
 		// Parse the URL
 		urlstr := c.Params("*")
-		if urlstr == "" {
-			log.Error("No url Parameter")
-			return errors.New("No URl parameter")
-		}
-		// Check the validity of the url
-		url, err := url.Parse(urlstr)
+		log.Debug("Got request for ", urlstr)
+		// Check the url and parse
+		parsedUrl, err := utils.ParseURL(urlstr)
 		if err != nil {
 			log.Error(err)
 			return err
 		}
-		log.Debug("URL:", url.String())
-		if url.Hostname() == "" {
-			log.Error("No Host was given")
-			return errors.New("No hostname was given")
-		}
-		// Do a http request to that URL
-		resp, err := http.Get(url.String())
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-		// Read the response Body
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		// Extract the content-type
-		content_type := resp.Header["Content-Type"][0]
-		content_type = strings.Split(content_type, "/")[1]
-		log.Debug("Content-Type:", content_type)
-		return c.Status(resp.StatusCode).Type(content_type).Send(body)
+		log.Debug(parsedUrl)
+		// Request the resources on the remote server
+		code, contenttype, body, err := utils.DoHttpRequest(parsedUrl)
+		log.Debug("Content-Type: ", contenttype)
+		// Return the data
+		return c.Status(code).Type(contenttype).Send(body)
 	})
 
 	// Start the Webserver
