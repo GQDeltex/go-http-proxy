@@ -7,9 +7,14 @@ import (
 	"strings"
 )
 
-func DoHttpRequest(parsedUrl *url.URL, allowedHeaders []string) (int, map[string]string, []byte, error) {
+func DoHttpRequest(parsedUrl *url.URL, allowedHeaders []string, userAgent string) (int, map[string]string, []byte, error) {
 	// Do a http request to that URL
-	resp, err := http.Get(parsedUrl.String())
+	req, err := http.NewRequest("GET", parsedUrl.String(), nil)
+	if err != nil {
+		return 0, nil, nil, err
+	}
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return 0, nil, nil, err
 	}
