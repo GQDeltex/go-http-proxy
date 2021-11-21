@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"strconv"
 	"time"
 
 	"github.com/GQDeltex/go-http-proxy/utils"
@@ -14,6 +16,7 @@ func main() {
 	// Parse CLI Arguments
 	loglevel := flag.String("loglevel", "WARNING", "Set the loglevel [DEBUG,INFO,WARNING,ERROR,FATAL]")
 	caching_time := flag.Duration("cachetime", 30*time.Minute, "Set the time to cache stuff")
+	secret := flag.String("secret", "secret", "Set the secret used for signing the requests")
 	flag.Parse()
 	lvl, err := log.ParseLevel(*loglevel)
 	if err != nil {
@@ -34,13 +37,29 @@ func main() {
 
 	// The main route
 	app.Get("/*", func(c *fiber.Ctx) error {
-		// Parse the URL
+		// Parse the Parameters
 		urlstr := c.Params("*")
+		token := c.Query("token")
+		expiry := c.Query("expires")
 		log.Debug("Got request for ", urlstr)
-		// Check the url and parse
+		// Check the url and the query parameters
 		parsedUrl, err := utils.ParseURL(urlstr)
 		if err != nil {
 			log.Error(err)
+			return err
+		}
+		if token == "" || expiry == "" {
+			log.Error(errors.New("No token or expiry found"))
+			return fiber.ErrUnauthorized
+		}
+		expires, err := strconv.ParseInt(expiry, 10, 64)
+		if err != nil {
+			log.Error(err.Error())
+			return err
+		}
+		err = utils.ValidateToken(token, parsedUrl.String(), *secret, expires)
+		if err != nil {
+			log.Error(err.Error())
 			return err
 		}
 		log.Debug(parsedUrl)
