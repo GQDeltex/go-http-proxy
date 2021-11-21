@@ -16,8 +16,20 @@ func ParseURL(urlstr string) (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Remove relative link requests
 	if parsedUrl.Hostname() == "" {
 		return nil, errors.New("No hostname was given")
+	}
+	// Allow only http:// or https:// requests
+	if parsedUrl.Scheme != "https" && parsedUrl.Scheme != "http" {
+		return nil, errors.New("Unsupported protocol")
+	}
+	// block localhost and 127.0.0.1
+	if parsedUrl.Hostname() == "localhost" {
+		return nil, errors.New("Disallow Private Subnets")
+	}
+	if parsedUrl.Hostname() == "127.0.0.1" {
+		return nil, errors.New("Disallow Private Subnets")
 	}
 	// block 10.0.0.0/8
 	if strings.HasPrefix(parsedUrl.Hostname(), "10.") {
