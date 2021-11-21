@@ -20,6 +20,9 @@ func DoHttpRequest(parsedUrl *url.URL) (int, string, []byte, error) {
 	}
 	// Extract the content-type
 	content_type := resp.Header["Content-Type"][0]
-	content_type = strings.Split(content_type, "/")[1]
+	if strings.ContainsRune(content_type, '/') {
+		content_type = strings.Split(content_type, "/")[1]
+	}
+	content_type = strings.Split(content_type, ";")[0]
 	return resp.StatusCode, content_type, body, nil
 }
