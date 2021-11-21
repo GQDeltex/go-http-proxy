@@ -2,10 +2,7 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/GQDeltex/go-http-proxy/utils"
 	"github.com/gofiber/fiber/v2"
@@ -15,27 +12,17 @@ import (
 
 func main() {
 	// Parse CLI Arguments
-	loglevel := flag.String("loglevel", "WARNING", "Set the loglevel [DEBUG,INFO,WARNING,ERROR,FATAL]")
-	caching_time := flag.Duration("cachetime", 30*time.Minute, "Set the time to cache stuff")
-	secret := flag.String("secret", "secret", "Set the secret used for signing the requests")
-	allowed_headers := flag.String("allowedheaders", "Content-Type", "Set the allowed headers to be copied over")
-	flag.Parse()
-	lvl, err := log.ParseLevel(*loglevel)
+	cliArgs, err := utils.ParseCLIArgs()
 	if err != nil {
-		log.Fatal("Could not Parse Loglevel")
+		log.Fatal(err.Error())
 	}
-	allowedHeaders := strings.Split(*allowed_headers, ",")
-	log.Info("LogLevel: ", lvl.String())
-	log.Info("CacheTime: ", caching_time.String())
-	log.Info("AllowedHeaders: ", allowedHeaders)
-
 	// Setup logger and fiber
-	log.SetLevel(lvl)
+	log.SetLevel(cliArgs.LogLevel)
 	app := fiber.New()
 
 	// Setup Cache Middleware
 	app.Use(cache.New(cache.Config{
-		Expiration:   *caching_time,
+		Expiration:   cliArgs.CachingTime,
 		CacheControl: true,
 	}))
 
@@ -61,14 +48,14 @@ func main() {
 			log.Error(err.Error())
 			return err
 		}
-		err = utils.ValidateToken(token, parsedUrl.String(), *secret, expires)
+		err = utils.ValidateToken(token, parsedUrl.String(), cliArgs.Secret, expires)
 		if err != nil {
 			log.Error(err.Error())
 			return err
 		}
 		log.Debug(parsedUrl)
 		// Request the resources on the remote server
-		code, headers, body, err := utils.DoHttpRequest(parsedUrl, allowedHeaders)
+		code, headers, body, err := utils.DoHttpRequest(parsedUrl, cliArgs.AllowedHeaders, cliArgs.UserAgent)
 		log.Debug("Sending Headers: ", headers)
 		// Return the data
 		for header, value := range headers {
@@ -79,5 +66,5 @@ func main() {
 	})
 
 	// Start the Webserver
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(":" + strconv.Itoa(cliArgs.Port)))
 }
