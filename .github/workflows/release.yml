@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - "v*"
+      - "v*.*.*"
 
 jobs:
   generate:
@@ -14,17 +14,17 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
-      - name: Generate build files
+      - name: "Generate build files"
         uses: thatisuday/go-cross-build@v1
         with:
           platforms: 'linux/amd64, darwin/amd64, windows/amd64'
           name: 'go-http-proxy'
           compress: 'true'
           dest: 'dist'
-      - uses: "marvinpinto/action-automatic-releases@latest"
+      - name: "Generate Release"
+        uses: softprops/action-gh-release@v1
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: latest
-          prerelease: 'false'
           files: './dist/*'
+          prerelease: false
+          generate_release_notes: true
 
