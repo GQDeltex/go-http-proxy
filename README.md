@@ -1,7 +1,19 @@
 # go-http-proxy
 A simple go program to proxy http requests through a server with caching
 
-
+## Usage
+All cli options are optional, and have the default values of
+```
+secret: 'secret'
+cachetime: '30m'
+allowedheaders: 'content-type'
+```
+To change these defaults, just run the command with options
+```bash
+go-http-server --secret 'supersecret' --cachetime 30m --allowedheaders 'content-type,etag,date'
+```
+After running the server you can access the service on port 3000 `http://localhost:3000/?url=<the-url-to-proxy&token=<the auth token>&expires=<token expiry time>`.
+The token is a SHA256 Hash of the url + secret + expiry time. So as long as nobody knows your secret key nobody else can access the router.
 
 ## Installation
 ### Download latest release
