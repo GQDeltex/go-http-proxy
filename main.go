@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/GQDeltex/go-http-proxy/utils"
@@ -17,13 +18,16 @@ func main() {
 	loglevel := flag.String("loglevel", "WARNING", "Set the loglevel [DEBUG,INFO,WARNING,ERROR,FATAL]")
 	caching_time := flag.Duration("cachetime", 30*time.Minute, "Set the time to cache stuff")
 	secret := flag.String("secret", "secret", "Set the secret used for signing the requests")
+	allowed_headers := flag.String("allowedheaders", "Content-Type", "Set the allowed headers to be copied over")
 	flag.Parse()
 	lvl, err := log.ParseLevel(*loglevel)
 	if err != nil {
 		log.Fatal("Could not Parse Loglevel")
 	}
+	allowedHeaders := strings.Split(*allowed_headers, ",")
 	log.Info("LogLevel: ", lvl.String())
 	log.Info("CacheTime: ", caching_time.String())
+	log.Info("AllowedHeaders: ", allowedHeaders)
 
 	// Setup logger and fiber
 	log.SetLevel(lvl)
@@ -64,10 +68,14 @@ func main() {
 		}
 		log.Debug(parsedUrl)
 		// Request the resources on the remote server
-		code, contenttype, body, err := utils.DoHttpRequest(parsedUrl)
-		log.Debug("Content-Type: ", contenttype)
+		code, headers, body, err := utils.DoHttpRequest(parsedUrl, allowedHeaders)
+		log.Debug("Sending Headers: ", headers)
 		// Return the data
-		return c.Status(code).Type(contenttype).Send(body)
+		for header, value := range headers {
+			c.Response().Header.Add(header, value)
+		}
+		c.Response().SetStatusCode(code)
+		return c.Send(body)
 	})
 
 	// Start the Webserver
