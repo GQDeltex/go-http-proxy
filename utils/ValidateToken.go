@@ -13,7 +13,6 @@ func ValidateToken(token string, url string, secret string, expiry int64) error 
 	if time.Now().Unix() > expiry {
 		return errors.New("Token expired")
 	}
-	log.Debug("Building Token from: " + url + secret + strconv.FormatInt(expiry, 10))
 	hash := sha256.Sum256([]byte(url + secret + strconv.FormatInt(expiry, 10)))
 	compareHash := hex.EncodeToString(hash[:])
 	log.Debug("Got token: " + token)
