@@ -7,19 +7,26 @@ import (
 	"strings"
 )
 
-func DoHttpRequest(parsedUrl *url.URL) (int, string, []byte, error) {
+func DoHttpRequest(parsedUrl *url.URL, allowedHeaders []string) (int, map[string]string, []byte, error) {
 	// Do a http request to that URL
 	resp, err := http.Get(parsedUrl.String())
 	if err != nil {
-		return 0, "", nil, err
+		return 0, nil, nil, err
 	}
 	// Read the response Body
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return 0, "", nil, err
+		return 0, nil, nil, err
 	}
-	// Extract the content-type
-	content_type := resp.Header["Content-Type"][0]
-	content_type = strings.Split(content_type, "/")[1]
-	return resp.StatusCode, content_type, body, nil
+	// Extract the allowed Headers
+	headers := make(map[string]string, 0)
+	for header, value := range resp.Header {
+		for _, allowHeader := range allowedHeaders {
+			if strings.ToLower(allowHeader) == strings.ToLower(header) {
+				headers[header] = value[0]
+				break
+			}
+		}
+	}
+	return resp.StatusCode, headers, body, nil
 }
