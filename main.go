@@ -36,21 +36,21 @@ func main() {
 	}))
 
 	// The main route
-	app.Get("/*", func(c *fiber.Ctx) error {
+	app.Get("/", func(c *fiber.Ctx) error {
 		// Parse the Parameters
-		urlstr := c.Params("*")
+		urlstr := c.Query("url")
 		token := c.Query("token")
 		expiry := c.Query("expires")
+		if token == "" || expiry == "" || urlstr == "" {
+			log.Error(errors.New("Not all necessary query parameters given"))
+			return fiber.ErrUnauthorized
+		}
 		log.Debug("Got request for ", urlstr)
 		// Check the url and the query parameters
 		parsedUrl, err := utils.ParseURL(urlstr)
 		if err != nil {
 			log.Error(err)
 			return err
-		}
-		if token == "" || expiry == "" {
-			log.Error(errors.New("No token or expiry found"))
-			return fiber.ErrUnauthorized
 		}
 		expires, err := strconv.ParseInt(expiry, 10, 64)
 		if err != nil {
